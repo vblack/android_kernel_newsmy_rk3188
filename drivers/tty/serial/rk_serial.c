@@ -925,7 +925,7 @@ static void serial_rk_start_dma_rx(struct work_struct *work)
 #define POINT_MCU_FLASH_STATUS  	0x05
 #define POINT_MCU_REQUEST       	0x06
 #define POINT_MCU_VERSION       	0x03
-#define POINT_RDS_DATA	        	0x76
+#define POINT_RDS_DATA	        	0x77
 
 
 #define UART3_SEND_LOG 0
@@ -1636,6 +1636,8 @@ void receive_int_char(unsigned char ch)
 	}
 }
 #endif
+
+extern int fill_rds_buf(unsigned char *buf, unsigned int buf_len);
 
 extern int fill_canbus_buf(unsigned char *buf, unsigned int buf_len);
 
