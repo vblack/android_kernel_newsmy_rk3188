@@ -145,7 +145,9 @@ void __attribute__ ((weak)) arch_suspend_enable_irqs(void)
 static int suspend_enter(suspend_state_t state)
 {
 	int error;
+	int usb_otg_id_level;
 
+	printk(KERN_INFO "dzwei, suspend_enter\n");
 	if (suspend_ops->prepare) {
 		error = suspend_ops->prepare();
 		if (error)
@@ -174,7 +176,17 @@ static int suspend_enter(suspend_state_t state)
     {
         // disable rtc irq
         disable_irq_wake(gpio_to_irq(RK30_PIN0_PB5));
-        gpio_direction_output(RK30_PIN0_PC6, 0);
+        // disable SD irq
+        disable_irq_wake(gpio_to_irq(RK30_PIN3_PB0));
+		// disable V3.2 board usb host power supply
+        gpio_direction_output(RK30_PIN0_PC6, GPIO_LOW);
+		// disable embedded Android board USB host power supply
+		gpio_direction_output(RK30_PIN1_PB5, GPIO_LOW);
+		// save OTG mode and set the OTG port to slave mode
+		// in order to disable OTG host mode power supply
+		usb_otg_id_level = gpio_get_value(RK30_PIN1_PB4);
+		gpio_direction_output(RK30_PIN1_PB4, GPIO_LOW);
+		mdelay(200);
     }
 	arch_suspend_disable_irqs();
 	BUG_ON(!irqs_disabled());
@@ -191,7 +203,14 @@ static int suspend_enter(suspend_state_t state)
 	arch_suspend_enable_irqs();
 	BUG_ON(irqs_disabled());
     {
-        gpio_direction_output(RK30_PIN0_PC6, 1);
+		// restore OTG mode
+		gpio_direction_output(RK30_PIN1_PB4, usb_otg_id_level);
+		// enable embedded Android board USB host power supply
+		gpio_direction_output(RK30_PIN1_PB5, GPIO_HIGH);
+		// enable V3.2 board usb host power supply
+        gpio_direction_output(RK30_PIN0_PC6, GPIO_HIGH);
+        // enable SD irq
+        enable_irq_wake(gpio_to_irq(RK30_PIN3_PB0));
         // enable rtc irq
         enable_irq_wake(gpio_to_irq(RK30_PIN0_PB5));
 	}
@@ -230,6 +249,7 @@ int suspend_devices_and_enter(suspend_state_t state)
 		if (error)
 			goto Close;
 	}
+	printk(KERN_INFO "dzwei,before suspend_console\n");
 	suspend_console();
 	ftrace_stop();
 	suspend_test_start();
@@ -250,6 +270,7 @@ int suspend_devices_and_enter(suspend_state_t state)
 	suspend_test_finish("resume devices");
 	ftrace_start();
 	resume_console();
+	printk(KERN_INFO "dzwei,after resume_console\n");
  Close:
 	if (suspend_ops->end)
 		suspend_ops->end();

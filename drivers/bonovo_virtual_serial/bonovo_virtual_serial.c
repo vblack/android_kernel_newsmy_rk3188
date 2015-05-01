@@ -46,9 +46,21 @@ static int      handle_major = DEV_MAJOR;
 static dev_t    dev;
 static struct   cdev handle_cdev;
 static struct   class *handle_class;
+enum{
+    DEV_TYPE_CAN = 0,
+    DEV_TYPE_OBD = 1,
+    DEV_TYPE_CNT
+};
+int g_dev_type = DEV_TYPE_OBD;
 
 #define IOCTL_CLEAR_BUF           _IO(DEV_MAJOR, 0)
+#define IOCTL_SET_BAUDRATE        _IO(DEV_MAJOR, 1)
+#define IOCTL_CHECK_DEVICE_TYPE   _IO(DEV_MAJOR, 2)
 #define OBD_BUF_LEN                   200
+
+extern unsigned int calculateSum(unsigned char* cmdBuf, int size);
+extern int serial_send_ack(char * data, int len);
+extern int bonovo_deal_advance_key(int keyCode, int keyStatus);
 
 struct SObdDev
 {
@@ -156,7 +168,6 @@ fail_buff_full:
 }
 EXPORT_SYMBOL(virtual_serial_write_buff);
 
-
 static ssize_t obd_read_buff(struct file *fp, char __user *buff, size_t count, loff_t *offset)
 {
 	int i, res, size;
@@ -224,6 +235,38 @@ fail_buff_empty:
 	return res;
 }
 
+
+static ssize_t obd_write(struct file *fp, const char __user *buf,
+						size_t count, loff_t *ppos)
+{
+	unsigned int checksum, ret;
+    unsigned char * frame_buf = (char*)kmalloc((count + 7)*sizeof(char), GFP_KERNEL);
+	if (!frame_buf)
+	{
+		printk("===== virtual serial =====, can't alloc buff in write function!\r\n");
+		return -1;
+	}
+    frame_buf[0] = 0xFA;
+    frame_buf[1] = 0xFA;
+    frame_buf[2] = (count+7)& 0x00FF;
+    frame_buf[3] = ((count+7) >> 8)& 0x00FF;
+    frame_buf[4] = 0xA6;
+    
+	if (copy_from_user(&frame_buf[5], buf, count))
+	{
+	    kfree(frame_buf);
+		return -EFAULT;
+	}
+
+	checksum = calculateSum(frame_buf, count+5);
+	frame_buf[count+5] = checksum&0x0FF;
+	frame_buf[count+6] = (checksum>>8)&0x0FF;
+
+    ret = serial_send_ack(frame_buf, count+7);
+    kfree(frame_buf);
+    return ret;
+}
+
 static unsigned int obd_poll(struct file *filp, poll_table *wait)
 {
     unsigned int mask = 0;
@@ -240,18 +283,54 @@ static unsigned int obd_poll(struct file *filp, poll_table *wait)
     return mask;
 }
 
+int set_baud_rate(int baud_rate)
+{
+    int checksum, ret;
+    unsigned char cmd_buf[9] = {0xFA, 0xFA, 0x09, 0x00, 0x83, 0x02, 0x00};
+
+    cmd_buf[6] = baud_rate/100;
+    checksum = calculateSum(cmd_buf, 9);
+    cmd_buf[7] = checksum&0xFF;
+    cmd_buf[8] = (checksum>>8)&0xFF;
+
+    ret = serial_send_ack(cmd_buf, 9);
+    if(ret < 9)
+        ret = 0;
+    else
+        ret = -1;
+    return ret;
+}
+
+int set_dev_type(int type)
+{
+    if(type > 0){
+        g_dev_type = type;
+    }else{
+        return -1;
+    }
+    return 0;
+}
+
 static long obd_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
+    int ret = 0;
     switch( cmd )
     {
     case IOCTL_CLEAR_BUF:
 		clearDevBuff();
+        ret = 0;
 		break;
+    case IOCTL_SET_BAUDRATE:
+        ret = set_baud_rate((unsigned int)arg);
+        break;
+    case IOCTL_CHECK_DEVICE_TYPE:
+        ret = g_dev_type;
+        break;
 	default:
-		return -EINVAL;
+		ret = -EINVAL;
 		break;
     }
-    return 0;
+    return ret;
 }
 
 static int obd_open (struct inode *inode, struct file *filp)  
@@ -276,6 +355,8 @@ static struct file_operations handle_fops =
 	.poll     = obd_poll,
 #ifdef OBD_WRITE_BLOCK
 	.write    = virtual_serial_write_buff,
+#else
+    .write    = obd_write,
 #endif
 };  
 

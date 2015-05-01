@@ -1349,6 +1349,8 @@ static const struct usb_device_id option_ids[] = {
    { USB_DEVICE(0x1c9e,0x9605)},
    { USB_DEVICE(0x19d2, 0x0170) },
    { USB_DEVICE(0x19d2, 0xffe8) },
+   { USB_DEVICE(0x19d2, 0xffeb) },	// MW3820, dzwei, 2015-1-20
+   { USB_DEVICE(0x1782, 0x4D00) },	//for MW3820 usb otg
    { USB_DEVICE(0x19D2,0x1177) },//K3770-Z
    { USB_DEVICE(0x230D, 0x000c) },
  //  { USB_DEVICE(0x21F5, 0x2009) },

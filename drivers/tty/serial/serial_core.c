@@ -572,6 +572,9 @@ int serial_send_ack(char * data, int len)
 	return ret;
 }
 
+EXPORT_SYMBOL(serial_send_ack);
+
+
 static void serial_tx_point_timeout(unsigned long uart)
 {
 	int ret;

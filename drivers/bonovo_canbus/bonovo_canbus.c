@@ -36,6 +36,12 @@
 #else
 #define printk_canbus(format, arg...) 
 #endif
+enum
+{
+	eMCU_UART_DEV_NONE = 0,
+	eMCU_UART_DEV_OBD = 1,
+	eMCU_UART_DEV_CANBOX = 2
+};
 
 #define CANBUS_CDEV_NAME      "bonovo_canbus"   // device name
 #define DEV_MAJOR			236
@@ -43,8 +49,16 @@
 
 static int      canbus_cdev_major = DEV_MAJOR;
 static struct   class *canbus_class;
+int mcu_uart_deivce = eMCU_UART_DEV_NONE;
 
+// when canbus service decode key operation information from can data frame
+// then it will call ioctl() routine and pass the keyvalue to the routine
 #define CANBUS_IOCTL_KEY_INFO		_IO(DEV_MAJOR, 0)
+// setting what device has connected to the MCU's UART, such as OBD or 
+// CAN bus decoder.
+#define CANBUS_IOCTL_MCU_UART_DEV	_IO(DEV_MAJOR, 1)		
+#define CANBUS_IOCTL_MCU_UART_38400	_IO(DEV_MAJOR, 2)		
+
 #define CANBUS_BUF_SIZE			64
 #define FLAG_USE_CIRC_BUF		1
 
@@ -348,10 +362,30 @@ static ssize_t canbus_write(struct file *fp, const char __user *buf,
 	uart3_frame_buf[2] = count+7;
 	uart3_frame_buf[3] = 0x00;
 
+	// when outside canbus decoder is used, when we send data to canbus decoder,
+	// MCU will remove some bytes used by bonovo uart protocol, 
+	// and pass the remaining data directly to the decoder,
+	// uart3_frame_buf[4] indicate if the data can be parsed by MCU 
+	// or ouside canbus decoder.
+	// dzwei, 2014-11-5
+	if (mcu_uart_deivce == eMCU_UART_DEV_CANBOX)
+	{
+		uart3_frame_buf[4] = 0xA6;
+	}
+	else
+	{
+		uart3_frame_buf[4] = 0xA8;
+	}
+	
 	checksum = calculateSum(uart3_frame_buf, count+5);
 	uart3_frame_buf[count+5] = checksum&0xFF;
 	uart3_frame_buf[count+6] = (checksum>>8)&0xFF;
-
+	/*
+	int i;
+	for(i = 0; i<sizeof(uart3_frame_buf); i++) {
+		printk(" (myu)0x%02X\r\n", uart3_frame_buf[i]);
+	}
+	*/
 	return serial_send_ack(uart3_frame_buf, count+7);
 }
 
@@ -359,6 +393,11 @@ static long canbus_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
 	unsigned int kbuf[3];
 	int count;
+	unsigned int checksum;
+	unsigned char tmp_frame_buf[10]=
+	{
+		0xFA,0xFA,0x0A,0x00,0x83,0x02,
+	};
 	
     switch (cmd)
     {
@@ -377,6 +416,34 @@ static long canbus_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		}
 		bonovo_deal_advance_key(0x060000 + kbuf[1], kbuf[2]);
 		break;
+
+	case CANBUS_IOCTL_MCU_UART_DEV:
+		count = copy_from_user(kbuf, (void *)arg, sizeof(int));
+		if (count)
+		{
+			printk("=====canbus_ioctl=====, can not copy parameter from user space !\r\n");
+			break;
+		}
+		mcu_uart_deivce = kbuf[0];
+		break;
+	case CANBUS_IOCTL_MCU_UART_38400:
+		tmp_frame_buf[2] = 0x0A;		// frame length low byte
+		tmp_frame_buf[3] = 0x00;		// frame length high byte
+		tmp_frame_buf[4] = 0x83;		// set MCU parameter
+		tmp_frame_buf[5] = 0x02;		// set uart bitrate
+		tmp_frame_buf[6] = arg&0xFF;	// bitrate/100
+		tmp_frame_buf[7] = arg>>8;		// bitrate/100
+		checksum = calculateSum(tmp_frame_buf, 8);
+		tmp_frame_buf[8] = checksum&0xFF;
+		tmp_frame_buf[9] = (checksum>>8)&0xFF;
+
+		/*
+		int i;
+		for(i = 0; i<sizeof(tmp_frame_buf); i++) {
+			printk(" (myu-->UART)0x%02X\r\n", tmp_frame_buf[i]);
+		}
+		*/
+		return serial_send_ack(tmp_frame_buf, tmp_frame_buf[2]);		
 	default:
 		return -EINVAL;
 		break;

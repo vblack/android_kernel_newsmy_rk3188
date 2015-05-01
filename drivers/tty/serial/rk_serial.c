@@ -967,7 +967,30 @@ extern int mcu_status_write_buff(char* data, int size);
 extern void bonovo_mcu_status(char* data, int size);
 extern void bonovo_light_state_key(void);
 extern void ft5x0x_report_bonovo_touch_event(unsigned char *buf, unsigned int buf_len);
+extern int mcu_uart_deivce;
 
+MODULE_LICENSE("Dual BSD/GPL"); 
+
+typedef void (*callback_t)(char* data, int size);
+
+callback_t gs_func=NULL;
+
+void register_callback_func(callback_t func)
+{
+	//printk(KERN_INFO "register_callback_func\n");
+	printk("<<<<<<<<<<<<<<<<<<<<<<register_callback_func\n");
+	gs_func = func;
+}
+
+EXPORT_SYMBOL(register_callback_func);
+
+void unregister_callback_func()
+{
+	//printk(KERN_INFO "unregister_callback_func\n");
+	printk(">>>>>>>>>>>>>>>>>>unregister_callback_func\n");
+	gs_func = NULL;
+}
+EXPORT_SYMBOL(unregister_callback_func);
 
 int send_ack(struct uart_rk_port * up, const char *data, int len);
 unsigned char start_complete[] = {0xFA, 0xFA, 0x07, 0x00, 0x80, 0x7B, 0x02};
@@ -1705,6 +1728,7 @@ int read_serial_frame(void * pport)
 	while (uart3_buf.valid_buf_num) {
 		ptr = uart3_buf.buf[uart3_buf.r_idx];
 		bonovo_printk(KERN_INFO "---- valid_buf_numd=%d r_idx=%d ptr[4]=0x%08x----\n",uart3_buf.valid_buf_num,uart3_buf.r_idx,ptr[4]);
+		
 		switch (ptr[4]) {
 		case POINT_TOUCH_DATA:	//down or up
 			bonovo_printk("-------- %s:suspend_status:%d\n", __FILE__, bonovo_get_suspend_status());
@@ -1821,7 +1845,15 @@ int read_serial_frame(void * pport)
 		case POINT_BLUETOOTH_INFO:
 			//i = (ptr[3]<<8) + ptr[2] - 7;
 			data_len = uart3_buf.buf_len[uart3_buf.r_idx]-7;
-			bonovo_write_bt_buff(&ptr[5], data_len);
+			
+			if(gs_func)
+			{
+				gs_func(&ptr[5], data_len);
+			}
+			else
+			{
+				bonovo_write_bt_buff(&ptr[5], data_len);
+			}
 			break;
 		case POINT_DVD_INFO:
 			break;
@@ -1835,7 +1867,15 @@ int read_serial_frame(void * pport)
 		case POINT_MCU_SERAIL:
 			//i = (ptr[3]<<8) + ptr[2] - 7;
 			data_len = uart3_buf.buf_len[uart3_buf.r_idx]-7;
-			virtual_serial_write_buff(&ptr[5], data_len);
+			if (mcu_uart_deivce == 2)		// eMCU_UART_DEV_CANBOX
+			{
+				fill_canbus_buf(&ptr[5], data_len);
+			}
+			else
+			{
+				//virtual_serial_write_buff(&ptr[5], data_len);
+				//gs_func(&ptr[5], data_len);
+			}
 			break;
         case POINT_MCU_STATUS:
             //i = (ptr[3]<<8) + ptr[2] - 7;
@@ -1878,7 +1918,7 @@ void serial_rk_point(struct work_struct *work)
 	bonovo_update_time_key();
 }
 
-unsigned int calculateSum(unsigned char* cmdBuf, int size)
+static  unsigned int calculateSum(unsigned char* cmdBuf, int size)
 {
     unsigned int temp = 0;
     int i;
@@ -1887,6 +1927,9 @@ unsigned int calculateSum(unsigned char* cmdBuf, int size)
     }
     return temp;
 }
+
+EXPORT_SYMBOL(calculateSum);
+
 
 void sync_mcu_time(struct timespec time)
 {
@@ -3298,9 +3341,12 @@ static struct platform_driver serial_rk_driver = {
 
 static int __init serial_rk_init(void)
 {
+	
 	int ret;
 	//hhb@rock-chips.com
 	printk("%s\n", VERSION_AND_TIME);
+
+	gs_func=NULL;
 
 	ret = uart_register_driver(&serial_rk_reg);
 	if (ret)

@@ -48,6 +48,8 @@ extern int bonovo_get_suspend_status(void);
 #else
 #define printk_zbiao(format, arg...) 
 #endif
+int prev_keycode = 0;
+int prev_keystatus = 0;
 
 extern suspend_state_t get_suspend_state(void);
 
@@ -553,13 +555,27 @@ int bonovo_deal_advance_key(int keyCode, int keyStatus)
                             && (pos->key_table[i].keyCode <= KEY_BONOVO_MAX_VALUE)){
                             bonovo_custom_ir_key(pos->key_table[i].keyCode, keyStatus);
                         }else {
-                            if(get_suspend_state() && (pos->key_table[i].keyCode==KEY_POWER)){
+                            if((get_suspend_state() || (prev_keycode==KEY_WAKEUP && prev_keystatus==1) )&& (pos->key_table[i].keyCode==KEY_POWER)){
+								printk("robin,key=%d,s=%d",KEY_WAKEUP,keyStatus);
                                 input_event(input, EV_KEY, KEY_WAKEUP, keyStatus);
+                                input_sync(input);
+								prev_keycode = KEY_WAKEUP;
+								prev_keystatus = keyStatus;
+                            }else{
+                                input_event(input, EV_KEY, pos->key_table[i].keyCode, keyStatus);
+								printk("robin,key=%d,s=%d",pos->key_table[i].keyCode,keyStatus);
+								prev_keycode = pos->key_table[i].keyCode;
+								prev_keystatus = keyStatus;
+                                input_sync(input);
+                            }
+                            /*
+                            if(get_suspend_state() && (pos->key_table[i].keyCode==KEY_POWER)){
+                                input_event(input, EV_KEY, pos->key_table[i].keyCode, keyStatus);
                                 input_sync(input);
                             }else{
                                 input_event(input, EV_KEY, pos->key_table[i].keyCode, keyStatus);
                                 input_sync(input);
-                            }
+                            }*/
                         }
                     }
                 }

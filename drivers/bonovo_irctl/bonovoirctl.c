@@ -196,7 +196,7 @@ struct rkxx_remotectl_button irctl_table =
 	.key_table = &mKeyCodeTableArry[0],//&key_table_default[0], 
 };
 
-static unsigned int calculateSum(unsigned char* cmdBuf, int size)
+ unsigned int calculateSum(unsigned char* cmdBuf, int size)
 {
     unsigned int temp = 0;
     int i;

@@ -432,7 +432,11 @@ int snd_usb_parse_audio_endpoints(struct snd_usb_audio *chip, int iface_no)
 		}
 
 		snd_printdd(KERN_INFO "%d:%u:%d: add audio endpoint %#x\n", dev->devnum, iface_no, altno, fp->endpoint);
-		err = snd_usb_add_audio_endpoint(chip, stream, fp);
+        if(stream == SNDRV_PCM_STREAM_PLAYBACK){
+            err = -ENODEV;
+        }else{
+		    err = snd_usb_add_audio_endpoint(chip, stream, fp);
+        }
 		if (err < 0) {
 			kfree(fp->rate_table);
 			kfree(fp);
