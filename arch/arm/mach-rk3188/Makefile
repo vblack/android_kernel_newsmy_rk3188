@@ -19,6 +19,10 @@ obj-$(CONFIG_CPU_FREQ) += cpufreq.o
 obj-$(CONFIG_DVFS) += dvfs.o
 obj-y += board.o
 
+ifeq ($(CONFIG_MACH_RK3188_OVERCLOCK),y)
+KBUILD_CFLAGS += -DRK3188_OVERCLOCK=1
+endif
+
 board-$(CONFIG_MACH_RK3188_FPGA) += board-rk3188-fpga.o
 board-$(CONFIG_MACH_RK3188_TB) += ../mach-rk30/board-rk3168-tb.o
 board-$(CONFIG_MACH_RK3188_SDK) += board-rk3188-sdk.o

@@ -2193,8 +2193,10 @@ static struct cpufreq_frequency_table dvfs_arm_table_volt_level0[] = {
         {.frequency = 1200 * 1000,      .index = 1100 * 1000},
         {.frequency = 1416 * 1000,      .index = 1200 * 1000},
         {.frequency = 1608 * 1000,      .index = 1300 * 1000},
+#ifdef RK3188_OVERCLOCK
         {.frequency = 1704 * 1000,	.index = 1400 * 1000},  
         {.frequency = 1800 * 1000,	.index = 1425 * 1000},
+#endif
         {.frequency = CPUFREQ_TABLE_END},
 };
 //default
@@ -2206,8 +2208,10 @@ static struct cpufreq_frequency_table dvfs_arm_table_volt_level1[] = {
         {.frequency = 1200 * 1000,      .index = 1150 * 1000},
         {.frequency = 1416 * 1000,      .index = 1250 * 1000},
         {.frequency = 1608 * 1000,      .index = 1350 * 1000},
+#ifdef RK3188_OVERCLOCK
         {.frequency = 1704 * 1000,	.index = 1400 * 1000},  
         {.frequency = 1800 * 1000,	.index = 1425 * 1000},
+#endif
         {.frequency = CPUFREQ_TABLE_END},
 };
 // ds1006h 10'
@@ -2219,8 +2223,10 @@ static struct cpufreq_frequency_table dvfs_arm_table_volt_level2[] = {
         {.frequency = 1200 * 1000,      .index = 1200 * 1000},
         {.frequency = 1416 * 1000,      .index = 1250 * 1000},
         {.frequency = 1608 * 1000,      .index = 1350 * 1000},
+#ifdef RK3188_OVERCLOCK
         {.frequency = 1704 * 1000,	.index = 1400 * 1000},  
         {.frequency = 1800 * 1000,	.index = 1425 * 1000},  
+#endif
         {.frequency = CPUFREQ_TABLE_END},
 };
 //if you board is good for volt quality,select dvfs_arm_table_volt_level0
@@ -2321,3 +2327,4 @@ MACHINE_START(RK30, "RK30board")
 	.timer		= &rk30_timer,
 	.init_machine	= machine_rk30_board_init,
 MACHINE_END
+

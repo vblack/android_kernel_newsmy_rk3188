@@ -37,3 +37,7 @@ config MACH_RK3188_FAC
         select MACH_RK_FAC
 
 endchoice
+
+config MACH_RK3188_OVERCLOCK
+        bool "Overclock rk3188"
+        default n
