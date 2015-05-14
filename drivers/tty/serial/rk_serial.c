@@ -965,7 +965,6 @@ extern void bonovo_set_android_status(int state);
 extern int virtual_serial_write_buff(char* data, int size);
 extern int mcu_status_write_buff(char* data, int size);
 extern void bonovo_mcu_status(char* data, int size);
-extern void bonovo_light_state_key(void);
 extern void ft5x0x_report_bonovo_touch_event(unsigned char *buf, unsigned int buf_len);
 extern int mcu_uart_deivce;
 
@@ -1881,7 +1880,7 @@ int read_serial_frame(void * pport)
             //i = (ptr[3]<<8) + ptr[2] - 7;
 			data_len = uart3_buf.buf_len[uart3_buf.r_idx]-7;
 			bonovo_mcu_status(&ptr[5], data_len);
-			bonovo_light_state_key();
+			// Moved bonovo_light_state_key() call to inside of bonovo_mcu_status
             break;
         case POINT_MCU_FLASH_STATUS:
         case POINT_MCU_REQUEST:

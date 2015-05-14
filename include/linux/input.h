@@ -754,9 +754,10 @@ struct input_keymap_entry {
 #define KEY_BONOVO_SWITCH_FMAM      0x253
 
 #define KEY_BONOVO_MIN_VALUE        KEY_BONOVO_UPDATETIME
-#define KEY_BONOVO_MAX_VALUE        KEY_BONOVO_SWITCH_FMAM
+#define KEY_BONOVO_MAX_VALUE        KEY_BONOVO_REVERSE
 
 #define KEY_BONOVO_LIGHTSTATE     0x254
+#define KEY_BONOVO_REVERSE        0x255
 
 //**********************************************************
 

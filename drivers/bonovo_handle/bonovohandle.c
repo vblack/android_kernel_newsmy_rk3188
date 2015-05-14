@@ -165,6 +165,8 @@ static int bonovo_fasync(int fd, struct file *filp, int mode)
 }
 
 extern int serial_send_ack(char * data, int len);
+extern void bonovo_light_state_key(void);
+extern void bonovo_reverse_key(void);
 
 // about radio ----------------------------------------------------
 #define RADIO_BUF_LEN    20
@@ -885,9 +887,11 @@ void bonovo_mcu_status(char* data, int size)
     switch(data[0]){
 	case ASTERN_STATE:
 		mcu_st .astern_status = (data[1] & 0x00FF) + ((data[2]<<8) & 0x00FF);
+		bonovo_reverse_key();
 		break;
 	case LIGHT_STATE:
 		mcu_st .light_status = (data[1] & 0x00FF) + ((data[2]<<8) & 0x00FF);
+		bonovo_light_state_key();
 		break;
 	default:
 		printk(KERN_INFO "Nothing to do myu\n");

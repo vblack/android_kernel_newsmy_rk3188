@@ -361,6 +361,15 @@ void bonovo_light_state_key(void)
 }
 EXPORT_SYMBOL(bonovo_light_state_key);
 
+void bonovo_reverse_key(void)
+{
+       input_report_key(input_dev, KEY_BONOVO_REVERSE, 1);
+       input_sync(input_dev);
+       input_report_key(input_dev, KEY_BONOVO_REVERSE, 0);
+       input_sync(input_dev);
+}
+EXPORT_SYMBOL(bonovo_reverse_key);
+
 
 extern void	bonovo_wakeup(void);
 //**********************************************
@@ -679,6 +688,7 @@ static int __devinit keys_probe(struct platform_device *pdev)
     input_set_capability(input, EV_KEY, KEY_BONOVO_RADIO_TURNDOWN);
     input_set_capability(input, EV_KEY, KEY_BONOVO_SWITCH_FMAM);
     input_set_capability(input, EV_KEY, KEY_BONOVO_LIGHTSTATE);	
+    input_set_capability(input, EV_KEY, KEY_BONOVO_REVERSE);	
 //********************************************************
 
 	error = input_register_device(input);
