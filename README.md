@@ -18,8 +18,6 @@ make kernel.img
 
 make modules
 
-sudo make modules_install
-
 
 You may now procede to building android
 
