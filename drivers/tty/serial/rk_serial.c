@@ -1889,6 +1889,7 @@ int read_serial_frame(void * pport)
             write_mcu_buff(&ptr[5], i);
             break;
 		default:
+			printk(KERN_INFO "rk_serial Unknown RX CMD (%02x)\n", ptr[4]);
 			break;
 		}
 		uart3_buf.valid_buf_num -= 1;
