@@ -26,7 +26,7 @@
 #include <linux/circ_buf.h>
 
 
-#define DEBUG_RDS_CDEV	0
+#define DEBUG_RDS_CDEV	1
 #if DEBUG_RDS_CDEV
 #define printk_rds(format, arg...)	\
 	printk(format, ##arg);

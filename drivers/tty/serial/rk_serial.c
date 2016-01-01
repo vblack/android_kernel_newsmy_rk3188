@@ -925,7 +925,7 @@ static void serial_rk_start_dma_rx(struct work_struct *work)
 #define POINT_MCU_FLASH_STATUS  	0x05
 #define POINT_MCU_REQUEST       	0x06
 #define POINT_MCU_VERSION       	0x03
-#define POINT_RDS_DATA	        	0x77
+#define POINT_RDS_DATA	        	0x31
 
 
 #define UART3_SEND_LOG 0
