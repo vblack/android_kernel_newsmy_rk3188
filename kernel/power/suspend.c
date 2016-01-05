@@ -178,15 +178,17 @@ static int suspend_enter(suspend_state_t state)
         disable_irq_wake(gpio_to_irq(RK30_PIN0_PB5));
         // disable SD irq
         disable_irq_wake(gpio_to_irq(RK30_PIN3_PB0));
+	// save OTG mode and set the OTG port to slave mode
+	// in order to disable OTG host mode power supply
+	usb_otg_id_level = gpio_get_value(RK30_PIN1_PB4);
+	if (pm_usbsuspendpower_enabled) {
 		// disable V3.2 board usb host power supply
-        gpio_direction_output(RK30_PIN0_PC6, GPIO_LOW);
+	        gpio_direction_output(RK30_PIN0_PC6, GPIO_LOW);
 		// disable embedded Android board USB host power supply
 		gpio_direction_output(RK30_PIN1_PB5, GPIO_LOW);
-		// save OTG mode and set the OTG port to slave mode
-		// in order to disable OTG host mode power supply
-		usb_otg_id_level = gpio_get_value(RK30_PIN1_PB4);
 		gpio_direction_output(RK30_PIN1_PB4, GPIO_LOW);
-		mdelay(200);
+	}
+	mdelay(200);
     }
 	arch_suspend_disable_irqs();
 	BUG_ON(!irqs_disabled());

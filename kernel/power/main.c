@@ -77,6 +77,33 @@ int pm_notifier_call_chain(unsigned long val)
 			== NOTIFY_BAD) ? -EINVAL : 0;
 }
 
+/* If set power is forcibly removed from USB ports on rockchip rk3188 (Newsmy Carpad). */
+int pm_usbsuspendpower_enabled = 1;
+
+static ssize_t pm_usbsuspendpower_show(struct kobject *kobj, struct kobj_attribute *attr,
+			     char *buf)
+{
+	return sprintf(buf, "%d\n", pm_usbsuspendpower_enabled);
+}
+
+static ssize_t pm_usbsuspendpower_store(struct kobject *kobj, struct kobj_attribute *attr,
+			      const char *buf, size_t n)
+{
+	unsigned long val;
+
+	if (strict_strtoul(buf, 10, &val))
+		return -EINVAL;
+
+	if (val > 1)
+		return -EINVAL;
+
+	pm_usbsuspendpower_enabled = val;
+	return n;
+}
+
+power_attr(pm_usbsuspendpower);
+
+
 /* If set, devices may be suspended and resumed asynchronously. */
 int pm_async_enabled = 1;
 
@@ -366,6 +393,7 @@ static struct attribute * g[] = {
 	&pm_trace_attr.attr,
 	&pm_trace_dev_match_attr.attr,
 #endif
+	&pm_usbsuspendpower_attr.attr,
 #ifdef CONFIG_PM_SLEEP
 	&pm_async_attr.attr,
 	&wakeup_count_attr.attr,

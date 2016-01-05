@@ -86,6 +86,7 @@ extern asmlinkage int swsusp_arch_resume(void);
 extern int create_basic_memory_bitmaps(void);
 extern void free_basic_memory_bitmaps(void);
 extern int hibernate_preallocate_memory(void);
+extern int pm_usbsuspendpower_enabled;
 
 /**
  *	Auxiliary structure used for reading the snapshot image data and
