@@ -1,0 +1,1 @@
+../mach-rk30/platsmp.c

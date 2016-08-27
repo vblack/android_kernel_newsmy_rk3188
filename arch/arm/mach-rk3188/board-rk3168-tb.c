@@ -1,0 +1,1 @@
+../mach-rk30/board-rk3168-tb.c
